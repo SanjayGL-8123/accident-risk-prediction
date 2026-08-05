@@ -40,6 +40,21 @@ python app.py
 ```
 Open **[http://127.0.0.1:2000](http://127.0.0.1:2000)** in your browser to interact with the interface.
 
+### 4. Database Setup (PostgreSQL)
+By default, the application runs on a local PostgreSQL connection with credentials `postgres/postgres` and database name `accident_prediction_db`.
+
+Make sure to create the database in PostgreSQL before running the server:
+```sql
+CREATE DATABASE accident_prediction_db;
+```
+
+To configure custom settings, set the following environment variables in your terminal:
+*   `DB_HOST` (default: `localhost`)
+*   `DB_PORT` (default: `5432`)
+*   `DB_USER` (default: `postgres`)
+*   `DB_PASSWORD` (default: `postgres`)
+*   `DB_NAME` (default: `accident_prediction_db`)
+
 ---
 
 ## 📋 Remaining Tasks (To-Do List)
@@ -59,6 +74,6 @@ Below is the roadmap of remaining enhancements to make the Accident Risk Predict
 
 ### Phase 3: Backend API & Deployment
 - [ ] **API Endpoint**: Expose a REST API endpoint (`POST /api/predict`) in [app.py](file:///c:/Users/Sanjay G L/Desktop/accident-risk-prediction/app.py) returning prediction payloads in JSON format.
-- [ ] **Prediction History Logging**: Add a database (e.g., SQLite) to log predicted inputs and generated risk scores for audit trails and history tracking.
+- [x] **Prediction History Logging**: Integrated PostgreSQL database logging with Flask-SQLAlchemy to record prediction histories.
 - [ ] **Dockerization**: Create a `Dockerfile` and `docker-compose.yml` to package and run the application in isolated containers.
 - [ ] **Unit Testing**: Create a suite of automated unit tests using `pytest` to test the dataset generation, training sequence, and predictor utility logic.

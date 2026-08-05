@@ -55,6 +55,19 @@
   .importance-track { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
   .importance-fill { height: 100%; background: #dc2626; border-radius: 4px; }
   .importance-pct { width: 40px; font-size: 11px; color: #94a3b8; }
+
+  /* History section styling */
+  .history-card { background: #fff; border-radius: 16px; padding: 26px; box-shadow: 0 20px 50px rgba(0,0,0,.3); margin-top: 20px; }
+  .history-table { width: 100%; border-collapse: collapse; margin-top: 14px; text-align: left; }
+  .history-table th, .history-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .history-table th { font-weight: 700; color: #1e1b4b; background: #f8fafc; }
+  .history-table td { color: #475569; }
+  .history-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; }
+  .history-badge.high { background: #fee2e2; color: #b91c1c; }
+  .history-badge.medium { background: #fef3c7; color: #92400e; }
+  .history-badge.low { background: #dcfce7; color: #15803d; }
+  .history-empty { color: #94a3b8; font-size: 13px; font-style: italic; text-align: center; padding: 20px 0; }
+  .text-xs { font-size: 11px; color: #94a3b8; display: block; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -156,6 +169,46 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    <div class="history-card">
+      <div class="section-title" style="margin-top: 0;">📋 Recent Predictions History</div>
+      {% if history %}
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Segment Metrics Overview</th>
+            <th>Risk Level</th>
+            <th>Probability</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in history %}
+          <tr>
+            <td>
+              {{ record.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+            </td>
+            <td>
+              <strong>Vol:</strong> {{ record.traffic_volume_per_day | int }} |
+              <strong>Speed:</strong> {{ record.speed_limit_kmh | int }} km/h |
+              <strong>Lanes:</strong> {{ record.number_of_lanes }} |
+              <strong>Streetlights:</strong> {{ 'Yes' if record.has_streetlights == 1 else 'No' }}
+              <span class="text-xs">
+                Accidents: {{ record.historical_accidents_last_year }} | Intersections: {{ record.number_of_intersections }}
+              </span>
+            </td>
+            <td>
+              <span class="history-badge {{ record.risk_level | lower }}">{{ record.risk_level }}</span>
+            </td>
+            <td><strong>{{ record.risk_probability }}%</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="history-empty">No prediction history logged yet or database is not connected. Submit a prediction to log data.</div>
+      {% endif %}
+    </div>
   </div>
   <script>
     document.querySelectorAll('[data-width]').forEach(function(el) {

@@ -13,9 +13,55 @@ Then open http://127.0.0.1:2000
 
 import os
 from flask import Flask, render_template, request
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 from predictor import predict, get_feature_importances, MODEL_PATH
 
 app = Flask(__name__)
+
+# Database Configuration
+db_host = os.environ.get("DB_HOST", "localhost")
+db_port = os.environ.get("DB_PORT", "5432")
+db_user = os.environ.get("DB_USER", "postgres")
+db_password = os.environ.get("DB_PASSWORD", "postgres")
+db_name = os.environ.get("DB_NAME", "accident_prediction_db")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+
+class PredictionHistory(db.Model):
+    __tablename__ = "prediction_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Inputs
+    traffic_volume_per_day = db.Column(db.Float, nullable=False)
+    speed_limit_kmh = db.Column(db.Float, nullable=False)
+    number_of_lanes = db.Column(db.Integer, nullable=False)
+    has_streetlights = db.Column(db.Integer, nullable=False)
+    number_of_intersections = db.Column(db.Integer, nullable=False)
+    pedestrian_crossings = db.Column(db.Integer, nullable=False)
+    road_curvature_score = db.Column(db.Float, nullable=False)
+    road_condition_score = db.Column(db.Float, nullable=False)
+    rainy_days_per_month = db.Column(db.Float, nullable=False)
+    historical_accidents_last_year = db.Column(db.Integer, nullable=False)
+    
+    # Outputs
+    risk_probability = db.Column(db.Float, nullable=False)
+    risk_level = db.Column(db.String(10), nullable=False)
+    risk_factors = db.Column(db.JSON, nullable=False)
+
+# Initialize database tables
+with app.app_context():
+    try:
+        db.create_all()
+        print("Database tables initialized successfully.")
+    except Exception as e:
+        print(f"Warning: Could not connect to PostgreSQL or initialize database tables: {e}")
+        print("Ensure PostgreSQL is running and the database 'accident_prediction_db' has been created.")
 
 FIELD_LABELS = {
     "traffic_volume_per_day": "Traffic Volume (vehicles/day)",
@@ -56,10 +102,39 @@ def index():
             }
             form_values = segment
             result = predict(segment)
+            
+            # Save prediction to PostgreSQL history log
+            try:
+                prediction_record = PredictionHistory(
+                    traffic_volume_per_day=segment["traffic_volume_per_day"],
+                    speed_limit_kmh=segment["speed_limit_kmh"],
+                    number_of_lanes=segment["number_of_lanes"],
+                    has_streetlights=segment["has_streetlights"],
+                    number_of_intersections=segment["number_of_intersections"],
+                    pedestrian_crossings=segment["pedestrian_crossings"],
+                    road_curvature_score=segment["road_curvature_score"],
+                    road_condition_score=segment["road_condition_score"],
+                    rainy_days_per_month=segment["rainy_days_per_month"],
+                    historical_accidents_last_year=segment["historical_accidents_last_year"],
+                    risk_probability=result["risk_probability"],
+                    risk_level=result["risk_level"],
+                    risk_factors=result["risk_factors"]
+                )
+                db.session.add(prediction_record)
+                db.session.commit()
+            except Exception as db_err:
+                print(f"Warning: Failed to log prediction to PostgreSQL database: {db_err}")
+                
         except (ValueError, TypeError):
             error = "Please make sure all fields contain valid numbers."
 
     importances = get_feature_importances() if not error else []
+
+    recent_predictions = []
+    try:
+        recent_predictions = PredictionHistory.query.order_by(PredictionHistory.timestamp.desc()).limit(10).all()
+    except Exception as db_err:
+        print(f"Warning: Failed to fetch prediction history: {db_err}")
 
     return render_template(
         "index.html",
@@ -68,8 +143,10 @@ def index():
         form_values=form_values,
         importances=importances,
         field_labels=FIELD_LABELS,
+        history=recent_predictions,
     )
 
 
 if __name__ == "__main__":
     app.run(debug=True, port=2000)
+

@@ -75,5 +75,5 @@ Below is the roadmap of remaining enhancements to make the Accident Risk Predict
 ### Phase 3: Backend API & Deployment
 - [ ] **API Endpoint**: Expose a REST API endpoint (`POST /api/predict`) in [app.py](file:///c:/Users/Sanjay G L/Desktop/accident-risk-prediction/app.py) returning prediction payloads in JSON format.
 - [x] **Prediction History Logging**: Integrated PostgreSQL database logging with Flask-SQLAlchemy to record prediction histories.
-- [ ] **Dockerization**: Create a `Dockerfile` and `docker-compose.yml` to package and run the application in isolated containers.
+-
 - [ ] **Unit Testing**: Create a suite of automated unit tests using `pytest` to test the dataset generation, training sequence, and predictor utility logic.
